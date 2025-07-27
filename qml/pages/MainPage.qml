@@ -11,7 +11,7 @@ Page {
     AppBar {
         id: appBar
 
-        headerText: qsTr("AniLibre")
+        headerText: qsTr("My Anime")
 
         AppBarSpacer {}
 
@@ -35,6 +35,7 @@ Page {
                 text: qsTr("Profile")
                 hint: "@username"
                 icon.source: "image://theme/icon-m-contact"
+                enabled: false
             }
 
             PopupMenuDividerItem {}
@@ -42,20 +43,28 @@ Page {
             PopupMenuItem {
                 text: qsTr("Favorites")
                 icon.source: "image://theme/icon-m-favorite"
+                enabled: false
             }
 
             PopupMenuItem {
                 text: qsTr("History")
                 icon.source: "image://theme/icon-m-history"
+                enabled: false
             }
 
             PopupMenuItem {
                 text: qsTr("Settings")
                 icon.source: "image://theme/icon-m-setting"
+                enabled: false
             }
         }
     }
 
+    onStatusChanged: {
+        if (PageStatus.Activating == status) {
+            favoritesSlider.item.update()
+        }
+    }
 
     SilicaFlickable {
         id: mainFlickable
@@ -78,99 +87,33 @@ Page {
             width: parent.width - Theme.horizontalPageMargin
             spacing: Theme.paddingLarge
 
-            SectionHeader {
-                id: upcomingHeader
+            Loader {
+                id: favoritesSlider
+                source: "../components/TitleSlider.qml"
                 anchors {
                     left: parent.left
                     right: parent.right
                 }
-                horizontalAlignment: Qt.AlignLeft
-                text: qsTr("Today")
+
+                onLoaded: {
+                    item.sliderTitle = qsTr("Favorites")
+                    item.sliderID = ""
+                    item.sliderType = "favorites"
+                }
             }
 
-            SilicaListView {
-                id: upcomingListView
-
-                height: 300
+            Loader {
+                source: "../components/TitleSlider.qml"
                 anchors {
                     left: parent.left
                     right: parent.right
                 }
+                height: 400
 
-                spacing: Theme.paddingMedium
-                orientation: ListView.Horizontal
-                clip: true
-
-                HorizontalScrollDecorator { flickable: upcomingListView }
-
-                model: ListModel {
-                    id: upcomingModel
-                    property var image
-                    property var id
-                }
-                delegate: BackgroundItem {
-                    id: upcomingItem
-
-                    width: 200
-                    height: parent.height
-
-                    Image {
-                        id: todayImage
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        source: model.image
-                        layer.enabled: true
-                        layer.effect: OpacityMask {
-                            maskSource: Rectangle {
-                                width: todayImage.width
-                                height: todayImage.height
-                                radius: 10
-                            }
-                        }
-
-                        BusyIndicator {
-                            size: BusyIndicatorSize.Medium
-                            anchors.centerIn: todayImage
-                            running: todayImage.status != Image.Ready
-                        }
-                    }
-
-                    onClicked: {
-                        var xhr = new XMLHttpRequest();
-                        xhr.open("GET", 'https://api.anilibria.app/api/v1/anime/releases/' + model.id, true);
-
-                        xhr.onreadystatechange = function() {
-                            if (xhr.readyState === XMLHttpRequest.DONE) {
-                                if (xhr.status === 200) {
-                                    var jsonResponse = JSON.parse(xhr.responseText)
-                                    pageStack.push(Qt.resolvedUrl("TitlePage.qml"), {jsonData: jsonResponse})
-                                }
-                            }
-                        };
-
-                        xhr.send();
-                    }
-                }
-
-                Component.onCompleted: {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open("GET", 'https://api.anilibria.app/api/v1/anime/schedule/now', true);
-
-                    xhr.onreadystatechange = function() {
-                        if (xhr.readyState === XMLHttpRequest.DONE) {
-                            if (xhr.status === 200) {
-                                var jsonResponse = JSON.parse(xhr.responseText);
-                                for (var key in jsonResponse.today) {
-                                    upcomingModel.append({
-                                        image: 'https://api.anilibria.app' + jsonResponse.today[key].release.poster.optimized.src,
-                                        id: jsonResponse.today[key].release.id,
-                                    })
-                                }
-                            }
-                        }
-                    };
-
-                    xhr.send();
+                onLoaded: {
+                    item.sliderTitle = qsTr("Today")
+                    item.sliderID = ""
+                    item.update()
                 }
             }
 

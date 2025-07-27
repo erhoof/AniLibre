@@ -3,6 +3,7 @@ import Sailfish.Silica 1.0
 import QtQuick.Layouts 1.1
 import Aurora.Controls 1.0
 import QtGraphicalEffects 1.0
+import ru.erhoof.pagefetcher 1.0
 
 Page {
     id: page
@@ -11,6 +12,16 @@ Page {
 
     property var jsonData
 
+    PageFetcher {
+        id: pageFetcher
+    }
+
+    onStatusChanged: {
+        if (PageStatus.Activating == status) {
+            startReadingButton.updateButton()
+        }
+    }
+
     AppBar {
         id: appBar
         headerText: jsonData.name.main
@@ -18,12 +29,32 @@ Page {
         AppBarSpacer {}
 
         AppBarButton {
+            property var isFavorite
             text: jsonData.added_in_users_favorites
-            icon.source: "image://theme/icon-m-favorite"
+
+            Component.onCompleted: {
+                isFavorite = pageFetcher.isFavorite(jsonData.id)
+                if(isFavorite) {
+                    icon.source = "image://theme/icon-m-favorite-selected"
+                } else {
+                    icon.source = "image://theme/icon-m-favorite"
+                }
+            }
+
+            onClicked: {
+                isFavorite = !isFavorite
+                pageFetcher.setFavorite(jsonData.id, isFavorite, jsonData.poster.optimized.src);
+                if(isFavorite) {
+                    icon.source = "image://theme/icon-m-favorite-selected"
+                } else {
+                    icon.source = "image://theme/icon-m-favorite"
+                }
+            }
         }
 
         AppBarButton {
             icon.source: "image://theme/icon-m-more"
+            enabled: false
         }
     }
 
@@ -74,21 +105,46 @@ Page {
                 spacing: Theme.paddingMedium
 
                 Button {
+                    id: startReadingButton
                     Layout.fillWidth: true
                     text: qsTr("Start watching")
+                    enabled: false
+
+                    property int savedEpisode: 0
 
                     onClicked: {
-                        for (var key in jsonData.player.list) {
-                            var page = Qt.createComponent("PlayerPage.qml")
-                                .createObject(this, {jsonData: jsonData, episodeJsonData: jsonData.player.list[key]});
-                            pageStack.push(page)
-                            break;
+                        var id = savedEpisode;
+                        if(!savedEpisode) {
+                            if(!episodesModel.count) {
+                                return
+                            }
+
+                            id += 1
+                            pageFetcher.setWatchStatus(page.jsonData.id, id)
                         }
+
+                        var data = episodesModel.get(id - 1).jsonData
+                        pageStack.push(Qt.resolvedUrl("PlayerPage.qml"), {jsonData: page.jsonData, episodeJsonData: data});
+                    }
+
+                    function updateButton() {
+                        var status = pageFetcher.getWatchStatus(jsonData.id)
+                        console.log(status)
+                        if(!status.status) {
+                            text = qsTr("Start watching");
+                            return;
+                        }
+
+                        text = qsTr("Continue")
+                                + " - "
+                                + qsTr("Episode") + " " + status.status.episode;
+                        savedEpisode = status.status.episode
                     }
                 }
 
                 Button {
                     icon.source: "image://theme/icon-s-more"
+                    enabled: false
                 }
             }
 
@@ -369,19 +425,23 @@ Page {
 
                     onClicked: {
                         pageStack.push(Qt.resolvedUrl("PlayerPage.qml"), {jsonData: page.jsonData, episodeJsonData: model.jsonData});
+                        pageFetcher.setWatchStatus(page.jsonData.id, model.episode)
                     }
                 }
 
                 Component.onCompleted: {
                     console.log("Loading episodes")
                     for (var key in jsonData.episodes) {
-                        console.log("Adding episode", jsonData.episodes[key].ordinal)
                         episodesModel.append({
                             episode: jsonData.episodes[key].ordinal,
                             updateTime: jsonData.episodes[key].updated_at,
                             name: jsonData.episodes[key].name,
                             jsonData: jsonData.episodes[key],
                         })
+                    }
+
+                    if(jsonData.episodes.length) {
+                        startReadingButton.enabled = true
                     }
                 }
             }

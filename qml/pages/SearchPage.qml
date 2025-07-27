@@ -48,6 +48,7 @@ Page {
 
         AppBarButton {
             icon.source: "image://theme/icon-m-filter"
+            enabled: false
         }
     }
 

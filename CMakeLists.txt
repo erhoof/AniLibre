@@ -16,6 +16,7 @@ file(GLOB TsFiles "translations/*.ts")
 qt5_add_translation(QmFiles ${TsFiles})
 
 set(SOURCES
+    src/pagefetcher.cpp
     src/main.cpp
 )
 
@@ -64,6 +65,7 @@ file(GLOB_RECURSE IconFiles "icons" "*.png")
 set(RESOURCE_FILES ${IconFiles})
 
 file(GLOB_RECURSE QmlFiles "qml/*.qml")
+file(GLOB_RECURSE HeaderFiles "src/*.h")
 
 add_custom_target(distfiles
     SOURCES
@@ -73,7 +75,8 @@ add_custom_target(distfiles
         rpm/${PROJECT_NAME}.changes.run.in
         ${QmlFiles}
         ${TsFiles}
-        ${IconFiles})
+        ${IconFiles}
+        ${HeaderFiles})
 
 file(WRITE "${CMAKE_BINARY_DIR}/QtCreatorDeployment.txt"
     "${CMAKE_INSTALL_PREFIX}

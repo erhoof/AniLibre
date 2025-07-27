@@ -13,10 +13,12 @@ Page {
 
     property var jsonData
     property var episodeJsonData
+    property string resolution
 
     Component.onCompleted: {
         videoPlayer.source = episodeJsonData.hls_480;
-        console.log(titleJsonData.name.main)
+        resolution = "480"
+        console.log(jsonData.id)
     }
 
     DisplayBlanking {
@@ -94,7 +96,6 @@ Page {
 
             onDurationChanged: {
                 slider.maximumValue = videoPlayer.duration / 1000;
-                console.log(videoPlayer.duration)
             }
         }
 
@@ -135,10 +136,12 @@ Page {
 
             IconButton {
                 icon.source: "image://theme/icon-m-previous"
+                enabled: false
             }
 
             IconButton {
                 icon.source: "image://theme/icon-m-next"
+                enabled: false
             }
 
             Slider {
@@ -164,10 +167,71 @@ Page {
 
             IconButton {
                 icon.source: "image://theme/icon-m-browser-sound"
+                enabled: false
+            }
+
+            PopupMenu {
+                id: popupMenu
+
+                PopupMenuItem {
+                    id: r480
+                    text: "480p"
+                    hint: (resolution === "480") ? qsTr("Selected") : ""
+                    enabled: (page.episodeJsonData.hls_480 !== null) && (page.episodeJsonData.hls_480 !== undefined)
+
+                    onClicked: {
+                        if (resolution === "480") {
+                            return
+                        }
+
+                        var lastPosition = videoPlayer.position
+                        videoPlayer.source = episodeJsonData.hls_480
+                        videoPlayer.seek(lastPosition)
+                        resolution = "480"
+                    }
+                }
+
+                PopupMenuItem {
+                    id: r720
+                    text: "720p"
+                    hint: (resolution === "720") ? qsTr("Selected") : ""
+                    enabled: (page.episodeJsonData.hls_720 !== null) && (page.episodeJsonData.hls_720 !== undefined)
+
+                    onClicked: {
+                        if (resolution === "720") {
+                            return
+                        }
+
+                        var lastPosition = videoPlayer.position
+                        videoPlayer.source = episodeJsonData.hls_720
+                        videoPlayer.seek(lastPosition)
+                        resolution = "720"
+                    }
+                }
+
+                PopupMenuItem {
+                    id: r1080
+                    text: "1080p"
+                    hint: (resolution === "1080") ? qsTr("Selected") : ""
+                    enabled: (page.episodeJsonData.hls_1080 !== null) && (page.episodeJsonData.hls_1080 !== undefined)
+
+                    onClicked: {
+                        if (resolution === "1080") {
+                            return
+                        }
+
+                        var lastPosition = videoPlayer.position
+                        videoPlayer.source = episodeJsonData.hls_1080
+                        videoPlayer.seek(lastPosition)
+                        resolution = "1080"
+                    }
+                }
             }
 
             IconButton {
                 icon.source: "image://theme/icon-m-setting"
+
+                onClicked: popupMenu.open()
             }
         }
     }
