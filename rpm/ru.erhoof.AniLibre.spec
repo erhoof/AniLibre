@@ -1,6 +1,6 @@
 Name:       ru.erhoof.AniLibre
 Summary:    Unofficial AniLibria Aurora OS Client
-Version:    0.4
+Version:    0.4.1
 Release:    1
 License:    GPLv3
 URL:        https://auroraos.ru
